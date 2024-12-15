@@ -3,30 +3,33 @@ import { Terminal } from '@xterm/xterm';
 import "@xterm/xterm/css/xterm.css"
 
 const term = new Terminal({
-    cols: 80,
-    rows: 24,
+    // cols: 80,
+    // rows: 24,
     cursorBlink: true, // Makes the terminal cursor blink
+    theme: {
+        background: "#000000", // Background color
+        foreground: "gray", // Text color
+        cursor: "#FFFFFF", // Cursor color
+    }
 });
 
-
+// Establish WebSocket connection
+// Establish WebSocket connection
+const socket = new WebSocket("ws://localhost:8080/ws");
 
 const XTerminal: React.FC = () => {
     const terminalRef = useRef<HTMLDivElement>(null);
     const socketRef = useRef<WebSocket | null>(null);
+    socketRef.current = socket;
     const commandBuffer = useRef<string>(""); // Buffer to store the user's input
 
     useEffect(() => {
         // Open the terminal in the referenced div
         term.open(terminalRef.current as HTMLDivElement);
-        term.write("Connecting to backend...\r\n");
-
-        // Establish WebSocket connection
-        const socket = new WebSocket("ws://localhost:8080/ws");
-        socketRef.current = socket;
 
         // Handle WebSocket events
         socket.onopen = () => {
-            term.write("Connection established. Start typing commands...\r\n");
+            // term.write("Connection established. Start typing commands...\r\n");
         };
 
         socket.onmessage = (event) => {
@@ -73,10 +76,10 @@ const XTerminal: React.FC = () => {
             socket.close();
             term.dispose();
         };
-    }, [terminalRef]);
+    }, []);
 
     return (
-        <div ref={terminalRef} style={{ textAlign: "left" }}></div>
+        <div ref={terminalRef} style={{ textAlign: "left", width: "100%", height: "100%" }}></div>
     );
 };
 
