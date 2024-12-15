@@ -32,9 +32,19 @@ wss.on('connection', (ws) => {
         env: process.env,
     });
 
+    let initialized = false;
+
     // Send shell output to WebSocket
     ptyProcess.onData((data) => {
-        ws.send(data);
+        if (!initialized) {
+            // Filter out initial messages (e.g., shell intro)
+            if (data.includes('bash-3.2$')) {
+                initialized = true; // Mark initialization as done
+                ws.send(data.trim()); // Send only the prompt
+            }
+        } else {
+            ws.send(data);
+        }
     });
 
     ws.on('message', (message) => {
