@@ -22,13 +22,16 @@ const server = http.createServer(app);
 // Attach WebSocket server to the HTTP server
 const wss = new WebSocketServer({ server, path: '/ws' });
 
+// List of allowed commands (whitelist approach)
+const allowedCommands = ['echo', 'git', 'ls', 'pwd', 'whoami']; // Add safe commands here
+
 wss.on('connection', (ws) => {
     console.log('New WebSocket connection');
 
     // Start a pty process for the shell
     const ptyProcess = pty.spawn(shell, [], {
         name: 'xterm-color',
-        cwd: process.env.HOME,
+        cwd: process.cwd(), // Start in the current working directory
         env: process.env,
     });
 
@@ -52,8 +55,15 @@ wss.on('connection', (ws) => {
             const parsedData = JSON.parse(message);
 
             if (parsedData.type === 'command' && parsedData.command) {
-                // Write command to the pty process
-                ptyProcess.write(`${parsedData.command}\n`);
+                const command = parsedData.command.trim().split(' ')[0]; // Extract the base command
+                console.log("command========>>>", command)
+                // Check if the command is allowed
+                if (allowedCommands.includes(command)) {
+                    // Write command to the pty process
+                    ptyProcess.write(`${parsedData.command}\n`);
+                } else {
+                    ws.send(`"${parsedData.command}" Command not allowed. Please use the terminal to connect cadmium with your project codebase. \r\nYou can use the following commands: 'git clone <repository-url>'\r\nbash-3.2$ `);
+                }
             } else {
                 ws.send(JSON.stringify({ error: 'Invalid message format' }));
             }
